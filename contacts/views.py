@@ -1,62 +1,38 @@
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import generics
-from django.shortcuts import get_object_or_404
+from rest_framework import generics, mixins
 
 from .models import Contact
 from .serializers import ContactSerializer
 
 
-class ContactListCreateAPIView(generics.ListCreateAPIView):
+class ContactMixinView(
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    generics.GenericAPIView
+):
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
+    lookup_field = 'pk'
 
-    # we can use it
-    # def perform_create(self, serializer):
-    #     print(serializer)
-    #     serializer.save()
-
-
-class ContactDetailAPIView(generics.RetrieveAPIView):
-    queryset = Contact.objects.all()
-    serializer_class = ContactSerializer
-    # lookup_field = 'pk'  we can use it to other field lookup
-
-
-# class ContactListAPIView(generics.ListAPIView):
-#     queryset = Contact.objects.all()
-#     serializer_class = ContactSerializer
-#     # lookup_field = 'pk'  we can use it to other field lookup
-
-
-class ContactUpdateAPIView(generics.UpdateAPIView):
-    queryset = Contact.objects.all()
-    serializer_class = ContactSerializer
-
-
-class ContactDestroyAPIView(generics.DestroyAPIView):
-    queryset = Contact.objects.all()
-    serializer_class = ContactSerializer
-
-@api_view(['GET', 'POST'])
-def contact_crl_view(request, pk=None, *args, **kwargs):
-    method = request.method
-
-    if method == "GET":
+    def get(self, request, *args, **kwargs):  # HTTP -> get
+        pk = kwargs.get("pk")
         if pk is not None:
-            # detail view
-            obj = get_object_or_404(Contact, pk=pk)
-            data = ContactSerializer(obj, many=False).data
-            return Response(data)
-        # list view
-        queryset = Contact.objects.all()
-        data = ContactSerializer(queryset, many=True).data
-        return Response(data)
+            return self.retrieve(request, *args, **kwargs)
+        return self.list(request, *args, **kwargs)
 
-    if method == "POST":
-        # create an item
-        serializer = ContactSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            return Response(serializer.data)
-        return Response({"invalid": "not good data"}, status=400)
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
