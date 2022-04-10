@@ -5,8 +5,10 @@ from .serializers import ContactSerializer
 from .permissions import IsStaffPermission
 from rest_framework.throttling import UserRateThrottle
 from api.throttlings import ThrottlingChangePhoneUser
+from api.mixins import UserQuerySetMixin
 
 class ContactMixinView(
+    UserQuerySetMixin,
     mixins.UpdateModelMixin,
     mixins.DestroyModelMixin,
     mixins.CreateModelMixin,
@@ -17,8 +19,8 @@ class ContactMixinView(
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsStaffPermission]
-    throttle_classes = [UserRateThrottle, ThrottlingChangePhoneUser]
+    # permission_classes = [IsStaffPermission]
+    # throttle_classes = [UserRateThrottle, ThrottlingChangePhoneUser]
     lookup_field = 'pk'
 
     def get(self, request, *args, **kwargs):  # HTTP -> get
@@ -31,7 +33,7 @@ class ContactMixinView(
         return self.create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
-        serializer.save()
+        serializer.save(owner=self.request.user)
 
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
