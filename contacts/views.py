@@ -1,9 +1,10 @@
 from rest_framework import generics, mixins, permissions, authentication
-
+from api.authentication import TokenAuthentication
 from .models import Contact
 from .serializers import ContactSerializer
 from .permissions import IsStaffPermission
-
+from rest_framework.throttling import UserRateThrottle
+from api.throttlings import ThrottlingChangePhoneUser
 
 class ContactMixinView(
     mixins.UpdateModelMixin,
@@ -15,9 +16,9 @@ class ContactMixinView(
 ):
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
-    authentication_classes = [authentication.SessionAuthentication,
-                              authentication.TokenAuthentication]
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsStaffPermission]
+    throttle_classes = [UserRateThrottle, ThrottlingChangePhoneUser]
     lookup_field = 'pk'
 
     def get(self, request, *args, **kwargs):  # HTTP -> get
