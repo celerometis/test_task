@@ -1,7 +1,8 @@
-from rest_framework import generics, mixins
+from rest_framework import generics, mixins, permissions, authentication
 
 from .models import Contact
 from .serializers import ContactSerializer
+from .permissions import IsStaffPermission
 
 
 class ContactMixinView(
@@ -14,6 +15,9 @@ class ContactMixinView(
 ):
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
+    authentication_classes = [authentication.SessionAuthentication,
+                              authentication.TokenAuthentication]
+    permission_classes = [IsStaffPermission]
     lookup_field = 'pk'
 
     def get(self, request, *args, **kwargs):  # HTTP -> get
